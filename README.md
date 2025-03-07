@@ -1,2 +1,1 @@
-# dinorun-eyblinks
-Play Dino Run with only eye blinks
+We use RMS (Roos Mean Square) and set threshould to detech eye blinks
