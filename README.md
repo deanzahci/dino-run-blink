@@ -2,10 +2,7 @@
 
 A Python project to play the classic offline dinosaur game using eye blinks detected by a MUSE 2 Brain-Computer Interface (BCI). The script processes EOG signals in real-time, calculates their RMS value, and simulates a spacebar press upon detecting a blink.
 
-<video width="640" height="360" controls>
-  <source src="demo.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+https://github.com/user-attachments/assets/89b8f244-222a-4ff5-aeae-40e1bc9b25e1
 
 ## How It Works
 
