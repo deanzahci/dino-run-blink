@@ -1,13 +1,4 @@
 from collections import deque
-<<<<<<< Updated upstream
-
-import matplotlib.pyplot as plt
-import numpy as np
-from pylsl import StreamInlet, resolve_streams
-from pynput.keyboard import Controller
-from scipy.signal import butter, filtfilt
-=======
->>>>>>> Stashed changes
 
 import matplotlib.pyplot as plt
 import numpy as np
