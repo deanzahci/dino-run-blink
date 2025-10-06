@@ -5,25 +5,19 @@ import logging
 
 from config import RMS_WINDOW_SIZE, FS
 
-
-def get_inlet():
-    streams = resolve_streams(wait_time=2.0)
-    eeg_stream = None
-
-    for stream in streams:
-        if stream.name() == "PetalStream_eeg":
-            eeg_stream = stream
-            break
-
-    if eeg_stream is None:
-        print("Stream not found")
-        exit(1)
-
-    print("Inlet Created")
-    return StreamInlet(eeg_stream)
-
 def stream():
-    inlet = get_inlet() # Only called once when the generator is first invoked
+    def get_inlet():
+        streams = resolve_streams(wait_time=2.0)
+        eeg_stream = None
+        for stream in streams:
+            if stream.name() == "PetalStream_eeg":
+                eeg_stream = stream
+                break
+        if eeg_stream is None:
+            exit(1)
+        return StreamInlet(eeg_stream)
+    
+    inlet = get_inlet()
     buffer = []
     while True:
         sample, timestamp = inlet.pull_sample(timeout=1)
@@ -59,11 +53,9 @@ def process_data(buffer):
     af7_data = apply_bandpass_filter(af7_data, FS)
     af8_data = apply_bandpass_filter(af8_data, FS)
 
-    # Individual RMS
+    # RMS calculation
     rms_af7 = np.sqrt(np.mean(np.square(af7_data)))
     rms_af8 = np.sqrt(np.mean(np.square(af8_data)))
-
-    # Combined RMS (The average of RMS_AF7 and RMS_AF8)
     combined_rms = (rms_af7 + rms_af8) / 2
 
     return rms_af7, rms_af8, combined_rms
