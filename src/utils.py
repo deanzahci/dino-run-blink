@@ -1,11 +1,35 @@
-import numpy as np
-from pylsl import StreamInlet, resolve_streams
-from scipy.signal import butter, filtfilt
 import logging
 
-from config import RMS_WINDOW_SIZE, FS
+import numpy as np
+from pylsl import StreamInlet, resolve_streams
+from scipy.signal import butter, iirnotch, filtfilt
+
+from config import (
+    FS,
+    BANDPASS_HIGH_CUT,
+    BANDPASS_LOW_CUT,
+    BANDPASS_ORDER,
+    RMS_WINDOW_SIZE,
+    NOTCH_TARGET_FREQ,
+    NOTCH_QUALITY_FACTOR,
+)
+
 
 def stream():
+    """
+    Generator function that streams EOG data from LSL and yields buffers.
+
+    This function connects to the LSL stream named "PetalStream_eeg", collects
+    samples from AF7 and AF8 channels into a buffer, and yields the buffer when
+    it reaches the specified RMS_WINDOW_SIZE.
+
+    Yields:
+        np.ndarray: A 2D array of shape (RMS_WINDOW_SIZE, 2) containing AF7 and AF8 data.
+
+    Raises:
+        SystemExit: If no LSL stream is found or no sample is received.
+    """
+
     def get_inlet():
         streams = resolve_streams(wait_time=2.0)
         eeg_stream = None
@@ -14,15 +38,16 @@ def stream():
                 eeg_stream = stream
                 break
         if eeg_stream is None:
+            logging.error("No LSL stream named 'PetalStream_eeg' found.")
             exit(1)
         return StreamInlet(eeg_stream)
-    
+
     inlet = get_inlet()
     buffer = []
     while True:
         sample, timestamp = inlet.pull_sample(timeout=1)
         if sample is None:
-            logging.warning("No sample received from LSL stream.")
+            logging.error("No sample received from LSL stream.")
             exit(1)
 
         # sample[1, 2, 3, 4, 5] = [TP9, AF7, AF8, TP10, AUX]
@@ -31,31 +56,50 @@ def stream():
         buffer.append([af7, af8])
 
         if len(buffer) >= RMS_WINDOW_SIZE:
-            yield np.array(buffer) # Yield to main.py here
-            buffer = []
+            yield np.array(buffer)  # Yield to main.py here
+            buffer.clear()
 
-def process_data(buffer):
-    af7_data = np.array(buffer[:, 0], dtype=np.float64)
-    af8_data = np.array(buffer[:, 1], dtype=np.float64)
 
-    def butter_bandpass(lowcut, highcut, fs, order=2):
-        nyq = 0.5 * fs
-        low = lowcut / nyq
-        high = highcut / nyq
-        b, a = butter(order, [low, high], btype="band")
-        return b, a
+# Filter design
+nyquist_freq = FS / 2
 
-    def apply_bandpass_filter(data, fs, lowcut=0.5, highcut=50.0, order=2):
-        b, a = butter_bandpass(lowcut, highcut, fs, order)
-        return filtfilt(b, a, data)
+# Butterworth bandpass filter design
+low = BANDPASS_LOW_CUT / nyquist_freq
+high = BANDPASS_HIGH_CUT / nyquist_freq
+bandpass_b, bandpass_a = butter(BANDPASS_ORDER, [low, high], btype="band")
 
-    # Bandpass filter
-    af7_data = apply_bandpass_filter(af7_data, FS)
-    af8_data = apply_bandpass_filter(af8_data, FS)
+# Notch filter design
+w0 = NOTCH_TARGET_FREQ / nyquist_freq  # w(=omega) = (2pi*f)/fs
+notch_b, notch_a = iirnotch(w0, NOTCH_QUALITY_FACTOR)
 
-    # RMS calculation
-    rms_af7 = np.sqrt(np.mean(np.square(af7_data)))
-    rms_af8 = np.sqrt(np.mean(np.square(af8_data)))
-    combined_rms = (rms_af7 + rms_af8) / 2
 
-    return rms_af7, rms_af8, combined_rms
+def process_buffer(buffer):
+    """
+    Processes a buffer of EOG data by applying spatial filtering, bandpass filtering,
+    notch filtering, and then calculates the Root Mean Square (RMS).
+
+    This function takes raw EOG data from AF7 and AF8 channels, applies spatial
+    filtering by averaging the channels, then filters the data using a bandpass
+    filter (0.5-50 Hz) and a notch filter (to remove noise), and finally computes
+    the RMS value for blink detection.
+
+    Args:
+        buffer (np.ndarray): A 2D array of shape (RMS_WINDOW_SIZE, 2) containing
+            raw EOG data from AF7 (column 0) and AF8 (column 1).
+
+    Returns:
+        float: The RMS value of the filtered combined data.
+    """
+
+    # Average the two channels first (spatial filtering) to improve SNR
+    raw_data_combined = (buffer[:, 0] + buffer[:, 1]) / 2
+
+    # Apply bandpass and notch filters
+    filtered_data = filtfilt(
+        notch_b, notch_a, filtfilt(bandpass_b, bandpass_a, raw_data_combined)
+    )
+
+    # Calculate RMS
+    rms = np.sqrt(np.mean(np.square(filtered_data)))
+
+    return rms

@@ -1,12 +1,12 @@
-from config import MAX_DISPLAY_TIME
 from matplotlib import pyplot as plt
+
+from config import MAX_DISPLAY_TIME
+
 
 def plot_data(
     ax,
     fig,
     deque_time,
-    deque_rms_af7,
-    deque_rms_af8,
     deque_rms_combined,
     deque_blink_times,
     max_value,
@@ -15,28 +15,10 @@ def plot_data(
 ):
     ax.clear()
 
-    # AF7
-    ax.plot(
-        deque_time,
-        deque_rms_af7,
-        label="RMS AF7",
-        color="black",
-        linewidth=1,
-        alpha=0.3,
-    )
-
-    # AF8
-    ax.plot(
-        deque_time,
-        deque_rms_af8,
-        label="RMS AF8",
-        color="black",
-        linewidth=1,
-        alpha=0.3,
-    )
-
     # Combined RMS
-    ax.plot(deque_time, deque_rms_combined, label="Combined RMS", color="blue", linewidth=2)
+    ax.plot(
+        deque_time, deque_rms_combined, label="Combined RMS", color="blue", linewidth=2
+    )
 
     # Blink detection line
     for t in deque_blink_times:
@@ -63,3 +45,4 @@ def plot_data(
     # Update the plot dynamically
     fig.canvas.draw()
     fig.canvas.flush_events()
+

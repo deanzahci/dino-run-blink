@@ -9,5 +9,5 @@ dependencies = [
     "numpy==1.26.4",
     "pynput==1.7.6",
     "pylsl==1.16.2",
-    "scipy==1.12.0"
+    "scipy>=1.16.2",
 ]
