@@ -17,7 +17,7 @@ from config import (
     BANDPASS_HIGH_CUT,
     BANDPASS_LOW_CUT,
     BANDPASS_ORDER,
-    RMS_WINDOW_SIZE,
+    RMS_BUFFER_SIZE,
     NOTCH_TARGET_FREQ,
     NOTCH_QUALITY_FACTOR,
 )
@@ -79,7 +79,7 @@ def stream():
         af8 = sample[AF8_CHANNEL_INDEX]
         buffer.append([af7, af8])
 
-        if len(buffer) >= RMS_WINDOW_SIZE:
+        if len(buffer) >= RMS_BUFFER_SIZE:
             yield np.array(buffer)  # Yield to main.py here
             buffer.clear()
 
@@ -122,8 +122,8 @@ def process_buffer(buffer):
     """
 
     assert (
-        buffer.shape[0] == RMS_WINDOW_SIZE
-    ), f"Buffer size {buffer.shape[0]} does not match RMS_WINDOW_SIZE {RMS_WINDOW_SIZE}"
+        buffer.shape[0] == RMS_BUFFER_SIZE
+    ), f"Buffer size {buffer.shape[0]} does not match RMS_WINDOW_SIZE {RMS_BUFFER_SIZE}"
 
     # Average the two channels first (spatial filtering) to improve SNR
     raw_data_combined = (buffer[:, 0] + buffer[:, 1]) / 2

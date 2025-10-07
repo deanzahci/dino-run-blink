@@ -10,7 +10,7 @@ from config import (
     FS,
     KEYBOARD_ACTION,
     MAX_DISPLAY_TIME,
-    RMS_WINDOW_SIZE,
+    RMS_BUFFER_SIZE,
     SLIDING_WINDOW_SIZE,
     SLIDING_WINDOW_THRESHOLD,
     Y_MAX_INIT,
@@ -43,7 +43,7 @@ def main():
     max_value = 0
     current_data_index = 0.0
     y_max = Y_MAX_INIT  # Updated dynamically
-    rms_window_size = RMS_WINDOW_SIZE
+    rms_window_size = RMS_BUFFER_SIZE
     TIME_DELTA = (
         1 / FS
     )  # Time interval between samples (when FS = 256, DELTA_T = ~0.0039s)
@@ -94,8 +94,9 @@ def main():
 
 
 if __name__ == "__main__":
-    print("Welcome to Dino Run Blink")
     verify_config_parameters()
+    print("Welcome to Dino Run Blink")
+
     if input("0: No Calibrate 1: Calibrate\n") == "1":
         is_calibration_enabled = True
     else:
