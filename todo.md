@@ -1,1 +1,2 @@
-- Auto calibration
+
+   - パッド長を RMS_WINDOW_SIZE に合わせて小さくし、エッジアーティファクトを抑制  

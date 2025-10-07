@@ -14,9 +14,14 @@ from config import (
     SLIDING_WINDOW_SIZE,
     SLIDING_WINDOW_THRESHOLD,
     Y_MAX_INIT,
+    verify_config_parameters,
 )
 from plot import plot_data
 from utils import process_buffer, stream
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 is_calibration_done = False
 keyboard = Controller()
@@ -89,7 +94,8 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.info("Welcome to Dino Run Blink")
+    print("Welcome to Dino Run Blink")
+    verify_config_parameters()
     if input("0: No Calibrate 1: Calibrate\n") == "1":
         is_calibration_enabled = True
     else:
