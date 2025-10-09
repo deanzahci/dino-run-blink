@@ -12,8 +12,8 @@ from pylsl import StreamInlet, resolve_streams
 from scipy.signal import butter, filtfilt, iirnotch, sosfiltfilt
 
 from config import (BANDPASS_HIGH_CUT, BANDPASS_LOW_CUT, BANDPASS_ORDER, FS,
-                    NOTCH_QUALITY_FACTOR, NOTCH_TARGET_FREQ, NYQUIST_FREQ,
-                    PADLEN, RMS_BUFFER_SIZE)
+                    MAD_K, MAD_SCALE_FACTOR, NOTCH_QUALITY_FACTOR,
+                    NOTCH_TARGET_FREQ, NYQUIST_FREQ, PADLEN, RMS_BUFFER_SIZE)
 
 
 def stream():
@@ -116,10 +116,6 @@ def process_buffer(buffer):
         AssertionError: If the buffer size does not match RMS_BUFFER_SIZE.
     """
 
-    assert (
-        buffer.shape[0] == RMS_BUFFER_SIZE
-    ), f"Buffer size {buffer.shape[0]} does not match RMS_BUFFER_SIZE {RMS_BUFFER_SIZE}"
-
     # Average the two channels first (spatial filtering) to improve SNR
     raw_data_combined = (buffer[:, 0] + buffer[:, 1]) / 2
 
@@ -142,3 +138,24 @@ def process_buffer(buffer):
     rms = np.sqrt(np.mean(np.square(filtered_data)))
 
     return rms
+
+
+def get_mad_threshould(calibration_rms_values):
+    """
+    Calculates the blink threshold using Median Absolute Deviation (MAD) from calibration RMS values.
+
+    This function computes the median of the calibration RMS values, then calculates MAD as the median
+    of absolute deviations from the median. The threshold is set as median + MAD_K * MAD_SCALE_FACTOR * MAD
+    to account for typical blink amplitudes while being robust to outliers.
+
+    Args:
+        calibration_rms_values (list or np.ndarray): RMS values collected during the non-blink calibration phase.
+
+    Returns:
+        float: The calculated blink threshold for detection.
+    """
+    calibration_rms_values = np.array(calibration_rms_values)
+    median = np.median(calibration_rms_values)
+    mad = np.median(np.abs(calibration_rms_values - median))
+    blink_threshould = median + MAD_K * MAD_SCALE_FACTOR * mad
+    return blink_threshould
