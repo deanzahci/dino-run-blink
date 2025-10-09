@@ -59,4 +59,3 @@
 - No trailing commas
 - Blank lines between logical sections</content>
   <parameter name="filePath">/Users/koichi/Projects/dino-run-blink/AGENTS.md
-
