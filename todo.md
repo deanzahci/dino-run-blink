@@ -1,0 +1,9 @@
+- Sliding window voting system improvement (tune `SLIDING_WINDOW_SIZE` / `SLIDING_WINDOW_THRESHOLD`; consider hysteresis or weighting)
+- Automated calibration option
+    - Percentile-based statistics (e.g., 95th percentile)
+    - Standard-deviation-based thresholding (mean + k * std)
+- Add unit tests
+    - Mocked `pylsl` stream tests for `stream()` behavior
+    - `PADLEN` enforcement and filter `padlen` usage tests
+    - Sliding-window voting tests (false-positive/negative scenarios)
+    - Calibration method tests
