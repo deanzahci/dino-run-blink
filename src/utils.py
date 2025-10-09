@@ -9,18 +9,11 @@ import logging
 
 import numpy as np
 from pylsl import StreamInlet, resolve_streams
-from scipy.signal import butter, iirnotch, sosfiltfilt, filtfilt
+from scipy.signal import butter, filtfilt, iirnotch, sosfiltfilt
 
-from config import (
-    FS,
-    NYQUIST_FREQ,
-    BANDPASS_HIGH_CUT,
-    BANDPASS_LOW_CUT,
-    BANDPASS_ORDER,
-    RMS_BUFFER_SIZE,
-    NOTCH_TARGET_FREQ,
-    NOTCH_QUALITY_FACTOR,
-)
+from config import (BANDPASS_HIGH_CUT, BANDPASS_LOW_CUT, BANDPASS_ORDER, FS,
+                    NOTCH_QUALITY_FACTOR, NOTCH_TARGET_FREQ, NYQUIST_FREQ,
+                    PADLEN, RMS_BUFFER_SIZE)
 
 
 def stream():
@@ -29,11 +22,11 @@ def stream():
 
     This function connects to the LSL stream named "PetalStream_eeg", collects
     samples from AF7 and AF8 channels into a buffer, and yields the buffer when
-    it reaches the specified RMS_WINDOW_SIZE. It includes error handling for
+    it reaches the specified RMS_BUFFER_SIZE. It includes error handling for
     missing or incomplete samples, exiting after a threshold of failures.
 
     Yields:
-        np.ndarray: A 2D array of shape (RMS_WINDOW_SIZE, 2) containing AF7 and AF8 data.
+        np.ndarray: A 2D array of shape (RMS_BUFFER_SIZE, 2) containing AF7 and AF8 data.
 
     Raises:
         SystemExit: If no LSL stream is found, or if no/incomplete samples are
@@ -59,7 +52,7 @@ def stream():
     AF7_CHANNEL_INDEX = 1
     AF8_CHANNEL_INDEX = 2
     while True:
-        sample, timestamp = inlet.pull_sample(timeout=1)
+        sample, timestamp = inlet.pull_sample(timeout=0.5)
         if sample is None or len(sample) < AF8_CHANNEL_INDEX + 1:
             sample_none_count += 1
             if sample_none_count >= sample_none_count_limit:
@@ -68,6 +61,7 @@ def stream():
                 )
                 exit(1)
             else:
+                # If the following warning appears too often, consider increasing the timeout
                 logging.warning(
                     "No sample received from LSL stream or sample is incomplete."
                 )
@@ -96,6 +90,7 @@ else:
     bandpass_b, bandpass_a = butter(BANDPASS_ORDER, [low, high], btype="band")
 
 # Notch filter design
+# Second order IIR notch filter, so no need for SOS here (technically possible but overkill)
 notch_b, notch_a = iirnotch(NOTCH_TARGET_FREQ, NOTCH_QUALITY_FACTOR, fs=FS)
 
 
@@ -111,29 +106,36 @@ def process_buffer(buffer):
     it computes the RMS value for blink detection.
 
     Args:
-        buffer (np.ndarray): A 2D array of shape (RMS_WINDOW_SIZE, 2) containing
+        buffer (np.ndarray): A 2D array of shape (RMS_BUFFER_SIZE, 2) containing
             raw EOG data from AF7 (column 0) and AF8 (column 1).
 
     Returns:
         float: The RMS value of the filtered combined data.
 
     Raises:
-        AssertionError: If the buffer size does not match RMS_WINDOW_SIZE.
+        AssertionError: If the buffer size does not match RMS_BUFFER_SIZE.
     """
 
     assert (
         buffer.shape[0] == RMS_BUFFER_SIZE
-    ), f"Buffer size {buffer.shape[0]} does not match RMS_WINDOW_SIZE {RMS_BUFFER_SIZE}"
+    ), f"Buffer size {buffer.shape[0]} does not match RMS_BUFFER_SIZE {RMS_BUFFER_SIZE}"
 
     # Average the two channels first (spatial filtering) to improve SNR
     raw_data_combined = (buffer[:, 0] + buffer[:, 1]) / 2
 
     # Apply bandpass filter first to remove broad noise, then notch filter for specific frequencies
+    # padlen set manually to min(RMS_BUFFER_SIZE-1, 3*BANDPASS_ORDER) to stay within buffer limits, unlike filtfilt's default auto-calculation
     if is_bandpass_order_greater_than_2:
-        bandpass_filtered_data = sosfiltfilt(bandpass_sos, raw_data_combined)
+        bandpass_filtered_data = sosfiltfilt(
+            bandpass_sos, raw_data_combined, padlen=PADLEN
+        )
     else:
-        bandpass_filtered_data = filtfilt(bandpass_b, bandpass_a, raw_data_combined)
-    notch_filtered_data = filtfilt(notch_b, notch_a, bandpass_filtered_data)
+        bandpass_filtered_data = filtfilt(
+            bandpass_b, bandpass_a, raw_data_combined, padlen=PADLEN
+        )
+    notch_filtered_data = filtfilt(
+        notch_b, notch_a, bandpass_filtered_data, padlen=PADLEN
+    )
     filtered_data = notch_filtered_data
 
     # Calculate RMS to quantify signal energy for blink detection

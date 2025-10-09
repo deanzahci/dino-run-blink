@@ -6,56 +6,44 @@
 
 - Run all tests: `uv run python tests/test_config_and_utils.py`
 - Run single test: `uv run python -m unittest tests.test_config_and_utils.TestClass.test_method`
-- No dedicated test runner configured (uses Python's unittest directly)
-
-### Linting/Formatting
-
-- No linting tools configured (ruff, black, mypy, flake8 not found)
-- No build commands configured
+- No linting tools configured
 
 ## Code Style Guidelines
 
 ### Imports
 
-- Standard library imports first
-- Third-party imports second
-- Local imports last
-- Use absolute imports for local modules
-- Group imports with blank lines between groups
+- Standard library first, third-party second, local last
+- Absolute imports for local modules
+- Group imports with blank lines
 
-### Naming Conventions
+### Naming
 
 - Constants: `ALL_CAPS_WITH_UNDERSCORES`
 - Functions/variables: `snake_case`
 - Classes: `PascalCase`
-- Modules: `snake_case`
 
-### Types and Documentation
+### Types & Documentation
 
 - Use type hints where beneficial
-- Include docstrings for all public functions and classes
-- Docstrings follow Google/NumPy style with description, args, returns, raises
+- Include docstrings for public functions/classes (Google/NumPy style)
+- Docstrings: description, Args, Returns, Raises
 
 ### Error Handling
 
-- Use assertions for configuration validation
-- Log errors with appropriate levels (INFO, ERROR)
-- Handle exceptions gracefully with try/except blocks
-- Exit program on critical failures (SystemExit)
+- Assertions for config validation
+- Log errors with appropriate levels
+- Handle exceptions gracefully with try/except
+- Exit on critical failures (SystemExit)
 
 ### Code Structure
 
-- Constants defined at module level with clear comments
-- Validation functions to ensure configuration integrity
+- Constants at module level with comments
 - Separate concerns: config, utils, main logic, plotting
-- Use meaningful variable names
-- Keep functions focused on single responsibilities
+- Meaningful variable names, single responsibility functions
 
 ### Formatting
 
 - 4-space indentation
-- Line length: reasonable (no strict limit enforced)
 - Consistent spacing around operators
-- No trailing commas
 - Blank lines between logical sections</content>
   <parameter name="filePath">/Users/koichi/Projects/dino-run-blink/AGENTS.md

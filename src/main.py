@@ -5,17 +5,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pynput.keyboard import Controller
 
-from config import (
-    BLINK_THRESHOLD_INIT,
-    FS,
-    KEYBOARD_ACTION,
-    MAX_DISPLAY_TIME,
-    RMS_BUFFER_SIZE,
-    SLIDING_WINDOW_SIZE,
-    SLIDING_WINDOW_THRESHOLD,
-    Y_MAX_INIT,
-    verify_config_parameters,
-)
+from config import (BLINK_THRESHOLD_INIT, FS, KEYBOARD_ACTION,
+                    MAX_DISPLAY_TIME, RMS_BUFFER_SIZE, SLIDING_WINDOW_SIZE,
+                    SLIDING_WINDOW_THRESHOLD, Y_MAX_INIT,
+                    verify_config_parameters)
 from plot import plot_data
 from utils import process_buffer, stream
 
@@ -69,7 +62,7 @@ def main():
         deque_time.extend(rms_window)
         deque_rms_combined.extend(np.full(rms_window_size, rms))
 
-        # Sliding window voting
+        # Sliding window voting algorithm
         deque_detection_history.append(rms > BLINK_THRESHOLD_INIT)
         if deque_detection_history.count(True) > SLIDING_WINDOW_THRESHOLD:
             # Refractory period to avoid multiple detections
@@ -78,6 +71,7 @@ def main():
             if is_action_enabled and (
                 is_calibration_done or not is_calibration_enabled
             ):
+                # Perform the keyboard action
                 keyboard.press(is_action_enabled)
                 keyboard.release(is_action_enabled)
 

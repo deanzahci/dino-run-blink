@@ -13,6 +13,7 @@ def plot_data(
     current_data_index,
     y_max,
 ):
+    # Clear previous plot first
     ax.clear()
 
     # Combined RMS
@@ -45,4 +46,3 @@ def plot_data(
     # Update the plot dynamically
     fig.canvas.draw()
     fig.canvas.flush_events()
-
